@@ -14,7 +14,7 @@ except ImportError, exception:
     LOGGER.error(str(exception))
     sys.exit()
 
-REDMINE_SERVER_URL = 'https://redmine-projets.smile.fr'
+REDMINE_SERVER_URL = 'https://my_server'
 USER_KEY = '############################'
 FILENAME = 'tickets.csv'
 
@@ -84,9 +84,8 @@ class RedmineImporter(object):
         for field in FIELDS_TO_REMAP.viewkeys() & row.viewkeys():
             row[field] = FIELDS_TO_REMAP[field](row[field])
         try:
-            #issue = self.redmine_server.issues.new(**row)
-            #LOGGER.info('Created ticket %s', issue)
-            pass
+            issue = self.redmine_server.issues.new(**row)
+            LOGGER.info('Created ticket %s', issue)
         except:
             LOGGER.error('Cannot create issue, skipping...')
             return False
@@ -96,7 +95,3 @@ if __name__ == '__main__':
     redmine_server = RedmineImporter()
     LOGGER.info(u'Importing tickets')
     redmine_server.import_tickets(FILENAME)
-    #redmine_server.create_tickets()
-    #TICKETS = [create_ticket(ticket_dict) for ticket_dict in TICKETS_LIST]
-    #CREATED_TICKETS = filter(lambda ticket: ticket, TICKETS)
-    #LOGGER.info(u'Created {0} tickets.'.format(len(CREATED_TICKETS)))
