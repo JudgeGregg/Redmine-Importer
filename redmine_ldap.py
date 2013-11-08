@@ -44,4 +44,4 @@ def get_user_id_from_ldap(pentagram, ldap_url=LDAP_SERVER_URL,
         LOGGER.error('Too many users matching, skipping...')
         return None
     _, arr = results[0]
-    return arr['uidNumber']
+    return arr['uidNumber'][0]
