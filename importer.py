@@ -3,6 +3,7 @@
 import csv
 import logging
 import sys
+import urllib2
 
 logging.basicConfig(level=logging.INFO)
 LOGGER = logging.getLogger(__name__)
@@ -46,39 +47,40 @@ FIELDS_TO_REMAP = {
 
 
 class RedmineImporter(object):
-    """Docstring for MyClass. """
+    """Redmine Importer: create issues list and upload each issue. """
 
     def __init__(self, red_url=REDMINE_SERVER_URL, user_key=USER_KEY):
-        self.tickets_list = None
-        try:
-            self.redmine_server = Redmine(red_url, user_key, version='2.3')
-        except:
-            LOGGER.error('Cannot connect to Redmine server, aborting.')
+        self.issues_list = None
+        self.created_issues = []
+        self.redmine_server = Redmine(red_url, user_key, version='2.3')
 
-    def create_ticket_list(self, filename):
-        """Create ticket list from csv file.
+    def create_issues_list(self, filename):
+        """Create issues list from csv file.
 
-        :returns: tickets_list: list of dicts
+        :returns: None
 
         """
         with open(filename) as csv_file:
-            csv_tickets = csv.DictReader(csv_file)
-            self.tickets_list = [row for row in csv_tickets]
+            csv_issues = csv.DictReader(csv_file)
+            self.issues_list = [row for row in csv_issues]
 
-    def import_tickets(self, filename):
-        """Create Redmine ticket from tickets_list.
+    def import_issues(self, filename):
+        """Create Redmine issues from issues_list.
+
+        :returns: Number of successfuly created tickets: int.
 
         """
-        self.create_ticket_list(filename)
-        LOGGER.info('Found %s tickets', len(self.tickets_list))
-        for row in self.tickets_list:
-            self.create_ticket(row)
+        self.create_issues_list(filename)
+        LOGGER.info('Found %s issue(s)', len(self.issues_list))
+        for row in self.issues_list:
+            self.created_issues.append(self.create_issue(row))
+        return len(filter(lambda issue: issue, self.created_issues))
 
-    def create_ticket(self, row):
-        """Create Redmine ticket from csv row.
+    def create_issue(self, row):
+        """Create Redmine issue from csv row.
 
         :row: csv row: dict
-        :returns: True
+        :returns: True or False on success or failure.
 
         """
         for field in FIELDS_TO_REMAP.viewkeys() & row.viewkeys():
@@ -86,12 +88,16 @@ class RedmineImporter(object):
         try:
             issue = self.redmine_server.issues.new(**row)
             LOGGER.info('Created ticket %s', issue)
-        except:
+        except (ValueError, urllib2.URLError) as exception:
             LOGGER.error('Cannot create issue, skipping...')
+            LOGGER.error('Please check connection parameters: %s',
+                         self.redmine_server._url)
+            LOGGER.error(str(exception))
             return False
         return True
 
 if __name__ == '__main__':
     redmine_server = RedmineImporter()
-    LOGGER.info(u'Importing tickets')
-    redmine_server.import_tickets(FILENAME)
+    LOGGER.info('Importing issues.')
+    tickets_nbr = redmine_server.import_issues(FILENAME)
+    LOGGER.info('Created %s issues.', tickets_nbr)
