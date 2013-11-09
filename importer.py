@@ -17,7 +17,7 @@ except ImportError, exception:
 
 REDMINE_SERVER_URL = 'https://my_server'
 USER_KEY = '############################'
-FILENAME = 'tickets.csv'
+FILENAME = 'issues.csv'
 
 CATEGORY_MAP = {
     'décision': 1,
